@@ -1,12 +1,9 @@
 import discord
 from discord import reaction, message, member, user
 import discord.ext
-import sqlite3
+import aiosqlite
+
 from discord.ext import commands
-
-conn = sqlite3.connect('reactions.db')
-
-c = conn.cursor()
 
 alphabets = ('🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯', '🇰', '🇱', '🇲', '🇳', '🇴', '🇵', '🇶', '🇷'
                                                                                                                    '🇸',
@@ -14,9 +11,10 @@ alphabets = ('🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '�
 
 image_types = "mp3"
 
+
 # The poll command is in development
 
-def is_suv(): # so that Suvendu can use the commands
+def is_suv():  # so that Suvendu can use the commands
     def predicate(ctx):
         return ctx.author.id == 598230772960460815
 
@@ -30,6 +28,9 @@ class reaction(commands.Cog):
     @commands.command(name='create poll', aliases=['cp'])
     @commands.check_any(commands.has_any_role("Mod", "BookKeeper"), is_suv())
     async def create_poll(self, ctx, question, *options):
+        conn = await aiosqlite.connect('test.db')
+        c = await conn.cursor()
+
         member = ctx.message.author
         member_name = member.name
         member_avatar = member.avatar_url
@@ -53,14 +54,13 @@ class reaction(commands.Cog):
         for emote in alphabets[:len(options)]:
             await sent_message.add_reaction(emote)
 
-        channel_id = sent_message.channel.id
         message_id = sent_message.id
 
-        c.execute("INSERT INTO reactions (channel_id, message_id) VALUES (?, ?)", (channel_id, message_id))
-        conn.commit()
-        c.execute("SELECT * FROM reactions")
-        b = c.fetchone()
-        print(b)
+        await c.execute("INSERT INTO reactions (message_id) VALUES ( ?)", (message_id))
+        await conn.commit()
+        await c.execute("SELECT * FROM reactions")
+        b = await c.fetchone()
+        print("Command", b)
 
     @create_poll.error
     async def create_poll_error(self, ctx, error):
@@ -69,25 +69,36 @@ class reaction(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        conn = await aiosqlite.connect('test.db')
+        c = await conn.cursor()
         member = payload.user_id
-        c.execute("SELECT user_id FROM reactions WHERE user_id = ?", (member,))
-        users = c.fetchone()
-        c.execute("SELECT message_id FROM reactions")
-        poll_message = c.fetchall()
-        for message_P in poll_message:
-            message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-            for reaction in message.reactions:
-                if payload.message_id in message_P:
-                    if (not payload.member.bot and users == None and payload.member in await reaction.users().flatten()
-                    ):
-                        c.execute("INSERT INTO reactions (user_id) VALUES (?)", (member,))
-                        await payload.member.send("Your reaction is recorded")
-                        await message.remove_reaction(reaction.emoji, payload.member)
-                        conn.commit()
-                    elif users != None:
-                        await payload.member.send("You can't vote again")
-                        await message.remove_reaction(reaction.emoji, payload.member)
+        await c.execute("SELECT user_id FROM reactions WHERE user_id = ? AND message_id = ?",
+                        (member, payload.message_id))
+        users = await c.fetchone()
+        print("User", users)
 
+        await c.execute("SELECT message_id FROM reactions")
+
+        message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+
+        for reaction in message.reactions:
+
+            if (
+                    not payload.member.bot and users == None and payload.member in await reaction.users().flatten()
+            ):
+
+                await payload.member.send("Your reaction is recorded")
+                await message.remove_reaction(reaction.emoji, payload.member)
+                await c.execute("INSERT INTO reactions (user_id,message_id) VALUES (?,?)",
+                                (member,
+                                 payload.message_id))
+                await c.execute("SELECT * FROM reactions")
+                z = await c.fetchall()
+                print(z)
+                await conn.commit()
+            elif users != None:
+                await payload.member.send("You can't vote again")
+                await message.remove_reaction(reaction.emoji, payload.member)
 
 @commands.command()
 @commands.check_any(commands.has_any_role("Mod", "BookKeeper"), is_suv())
