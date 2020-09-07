@@ -13,6 +13,9 @@ from discord.ext import commands
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
+
+    '''The setting for YouTube audio.'''
+
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
@@ -76,6 +79,7 @@ class Music(commands.Cog):
 
         await channel.connect()
 
+    # Error handling
     @join.error
     async def join_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -117,6 +121,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    # Error handling
     @play.error
     async def play_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -157,6 +162,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=pause_embed)
 
+    # Error handling
     @pause.error
     async def pause_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -190,6 +196,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=pause_embed)
 
+    # Error handling
     @resume.error
     async def resume_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -205,7 +212,7 @@ class Music(commands.Cog):
     @commands.command()
     @commands.has_role("BookKeeper")
     async def yt(self, ctx, *, url):
-        """Plays from a url (only for audiobooks and for bookeeper)"""
+        """Plays from a query (only for audiobooks and for bookeeper)"""
 
         song_there = os.path.isfile("song.webm")
         song = "song.webm"
@@ -235,6 +242,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    # Error handling
     @yt.error
     async def yt_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -252,10 +260,10 @@ class Music(commands.Cog):
 
     @commands.command()
     @commands.has_role("bookclub")
-    async def stream_play(self, ctx,timestamp: typing.Optional[int]=0,*,search: str):
+    async def stream_play(self, ctx, timestamp: typing.Optional[int] = 0, *, search: str):
         """Streams from a YouTube URL."""
         async with ctx.typing():
-            player = await YTDLSource.from_url(search, loop=self.bot.loop, stream=True,timestamp=timestamp)
+            player = await YTDLSource.from_url(search, loop=self.bot.loop, stream=True, timestamp=timestamp)
             ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
             embed = discord.Embed(
@@ -265,6 +273,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    # Error handling
     @stream_play.error
     async def stream_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -284,7 +293,6 @@ class Music(commands.Cog):
             )
 
             await ctx.send(embed=embed)
-
 
     @commands.command()
     @commands.has_role("bookclub")
@@ -307,6 +315,7 @@ class Music(commands.Cog):
         ctx.voice_client.source.volume = volume / 100
         await ctx.send(embed=embed)
 
+    # Error handling
     @volume.error
     async def volume_error(self, ctx, error):
         if isinstance(error, commands.MissingRole):
@@ -378,14 +387,13 @@ class Music(commands.Cog):
             ctx.voice_client.stop()
 
     @commands.command()
-    async def send_dm(self,ctx):
+    async def send_dm(self, ctx):
         embed1 = discord.Embed(
             colour=discord.Colour.green(),
             description="Good Luck for The VC today!"
         )
 
-
-        user = self.bot.get_user(id = 738845880899076139)
+        user = self.bot.get_user(id=738845880899076139)
         user1 = self.bot.get_user(id=692410976976240650)
         user2 = self.bot.get_user(id=688446359761846297)
         user3 = self.bot.get_user(id=701132254486855700)
