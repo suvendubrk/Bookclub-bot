@@ -48,7 +48,9 @@ class events(commands.Cog):
         embed.add_field(name=".join[channel name]", value="Joins the channel specifed by the user.", inline=False)
         embed.add_field(name=".play[audio file with extension]", value="Plays the audio from local system of bot.",
                         inline=False)
-        embed.add_field(name=".yt [URL]", value="Plays from a url (for audio books or long audio clips.)", inline=False)
+        embed.add_field(name=".yt [search]", value="Searches and plays (For audiobooks)", inline=False)
+        embed.add_field(name=".save [.mp3 file]", value="Saves an .mp3 file which can be played by `.play <filename>`.",
+                        inline=False)
 
         await ctx.send(embed=embed)
 
